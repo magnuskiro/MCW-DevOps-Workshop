@@ -30,7 +30,7 @@ jobs:
       
       - uses: azure/docker-login@v1
         with:
-          login-server: mcwworkshop.azurecr.io
+          registry: mcwworkshop.azurecr.io
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
