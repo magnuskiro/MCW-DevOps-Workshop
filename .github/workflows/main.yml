@@ -54,7 +54,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
 
       - name: push Image
-        run: docker push mcwworkshop.azurecr.io/tailspintoys/web:latest
+        run: docker push docker.io/tailspintoys/web:latest
       
       # # Runs a single command using the runners shell
       # - name: Run a one-line script
