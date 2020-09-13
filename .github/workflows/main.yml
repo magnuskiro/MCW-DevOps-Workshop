@@ -62,6 +62,8 @@ jobs:
       - run: |
           $output = az deployment group create --resource-group mcwworkshoprg --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
           $armOutputObj = $output | ConvertFrom-Json
+          Write-Host $output
+          Write-Host $armOutputObj
           $webAppName = $armOutputObj.webappname.value
           Write-Host $webAppName
           az webapp config container set `
