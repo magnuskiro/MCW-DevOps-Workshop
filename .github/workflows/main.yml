@@ -60,8 +60,18 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       
       - run: |
-          az deployment group create --resource-group mcwworkshoprg --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
-          $output="random text"
+          $output = az deployment group create --resource-group mcwworkshoprg --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
+          $armOutputObj = '$output' | ConvertFrom-Json
+          $webAppName = $armOutputObj.webappname.value
+          Write-Host $webAppName
+          az webapp config container set `
+                        --resource-group mcwworkshoprg `
+                        --name $webappname `
+                        --docker-custom-image-name mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }} `
+                        --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} `
+                        --docker-registry-server-url https://mcwworkshop.azurecr.io `
+                        --docker-registry-server-user ${{ secrets.REGISTRY_USERNAME }} `
+                        --slot staging
         shell: pwsh
       # - name: Deploy ARM Template
       #   uses: azure/CLI@v1
