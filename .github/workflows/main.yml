@@ -60,7 +60,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       - run: |
           az deployment group create --resource-group mcwworkshoprg --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
-          $output = "random text"
+          $output="random text"
       # - name: Deploy ARM Template
       #   uses: azure/CLI@v1
       #   with:
