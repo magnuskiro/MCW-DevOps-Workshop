@@ -61,8 +61,8 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az group deployment create --resource-group mcwworkshoprg --template-file ${{ github.workspace }}/azuredeploy.json `
-              --parameters environment=dev --paramaters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
+            az deployment group create --resource-group mcwworkshoprg --template-file ${{ github.workspace }}/azuredeploy.json `
+              --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
             # $armOutputObj = '$output' | ConvertFrom-Json
             # $webAppName = $armOutputObj.webappname.value
             # Write-Host $webAppName
