@@ -33,9 +33,9 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - run: |
-          docker build . -t mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }}
-          docker push mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }}
+      # - run: |
+      #     docker build . -t mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }}
+      #     docker push mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }}
 
       - name: Upload arm templates to workflow
         uses: actions/upload-artifact@v2
