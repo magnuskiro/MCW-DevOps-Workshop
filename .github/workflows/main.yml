@@ -6,9 +6,9 @@ name: CI
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 env:
   resourcegroup: mcwworkshoprg
@@ -25,7 +25,7 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - uses: azure/docker-login@v1
@@ -52,7 +52,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: armtemplate
-      
+
       - run: ls ${{ github.workspace }}
 
       - name: Login to Azure
@@ -70,7 +70,7 @@ jobs:
           az webapp config container set `
                         --resource-group ${{ env.resourcegroup }} `
                         --name $webappname `
-                        --docker-custom-image-name mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }} `  yy  
+                        --docker-custom-image-name mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }} `
                         --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} `
                         --docker-registry-server-url https://mcwworkshop.azurecr.io `
                         --docker-registry-server-user ${{ secrets.REGISTRY_USERNAME }} `
@@ -90,13 +90,13 @@ jobs:
       #     inlineScript: |
       #       az deployment group create --resource-group mcwworkshoprg --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
       #       # $armOutputObj = '$output' | ConvertFrom-Json
-            # $webAppName = $armOutputObj.webappname.value
-            # Write-Host $webAppName
-            # az webapp config container set `
-            #               --resource-group mcwworkshoprg `
-            #               --name $webappname `
-            #               --docker-custom-image-name mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }} `
-            #               --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} `
-            #               --docker-registry-server-url https://mcwworkshop.azurecr.io `
-            #               --docker-registry-server-user ${{ secrets.REGISTRY_USERNAME }} `
-            #               --slot staging
+      # $webAppName = $armOutputObj.webappname.value
+      # Write-Host $webAppName
+      # az webapp config container set `
+      #               --resource-group mcwworkshoprg `
+      #               --name $webappname `
+      #               --docker-custom-image-name mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }} `
+      #               --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} `
+      #               --docker-registry-server-url https://mcwworkshop.azurecr.io `
+      #               --docker-registry-server-user ${{ secrets.REGISTRY_USERNAME }} `
+      #               --slot staging
