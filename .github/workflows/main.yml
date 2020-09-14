@@ -13,7 +13,7 @@ on:
 env:
   resourcegroup: mcwworkshoprg
   containerregistry: mcwworkshop.azurecr.io
-  imagename: mcwworkshop.azurecr.io/tailspintoys/web
+  imagename: ${{ env.containerregistry }}/tailspintoys/web
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
@@ -32,8 +32,8 @@ jobs:
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - run: |
-          docker build . -t $imagename:${{ github.sha }}
-          docker push mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }}
+          docker build . -t ${{ env.imagename }}:${{ github.sha }}
+          docker push ${{ env.imagename }}:${{ github.sha }}
 
       - name: Upload arm templates to workflow
         uses: actions/upload-artifact@v2
@@ -62,9 +62,9 @@ jobs:
           az webapp config container set `
                         --resource-group ${{ env.resourcegroup }} `
                         --name $webappname `
-                        --docker-custom-image-name mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }} `
+                        --docker-custom-image-name ${{ env.imagename }}:${{ github.sha }} `
                         --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} `
-                        --docker-registry-server-url https://mcwworkshop.azurecr.io `
+                        --docker-registry-server-url https://${{ env.containerregistry }} `
                         --docker-registry-server-user ${{ secrets.REGISTRY_USERNAME }} `
                         --slot staging
           echo "::set-env name=webAppName::$webAppName"
@@ -74,5 +74,4 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            echo "webappname ${{ env.webAppName }}"
             az webapp deployment slot swap -g ${{ env.resourcegroup }} -n ${{ env.webAppName }} --slot staging --target-slot production
