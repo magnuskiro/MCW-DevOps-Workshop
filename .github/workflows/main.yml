@@ -33,9 +33,9 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      # - run: |
-      #     docker build . -t mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }}
-      #     docker push mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }}
+      - run: |
+          docker build . -t mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }}
+          docker push mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }}
 
       - name: Upload arm templates to workflow
         uses: actions/upload-artifact@v2
@@ -58,7 +58,7 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      
+
       - run: |
           $output = az deployment group create --resource-group mcwworkshoprg --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
           $armOutputObj = $output | ConvertFrom-Json
@@ -74,7 +74,14 @@ jobs:
                         --docker-registry-server-url https://mcwworkshop.azurecr.io `
                         --docker-registry-server-user ${{ secrets.REGISTRY_USERNAME }} `
                         --slot staging
+          az webapp deployment slot swap  -g mcwworkshoprg -n $webAppName --slot staging --target-slot production
         shell: pwsh
+
+      - name: Deploy ARM Template
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp deployment slot swap  -g MyResourceGroup -n MyUniqueApp --slot staging --target-slot production
       # - name: Deploy ARM Template
       #   uses: azure/CLI@v1
       #   with:
