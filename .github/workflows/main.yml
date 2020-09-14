@@ -70,15 +70,15 @@ jobs:
           az webapp config container set `
                         --resource-group ${{ env.resourcegroup }} `
                         --name $webappname `
-                        --docker-custom-image-name mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }} `
+                        --docker-custom-image-name mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }} `  yy  
                         --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} `
                         --docker-registry-server-url https://mcwworkshop.azurecr.io `
                         --docker-registry-server-user ${{ secrets.REGISTRY_USERNAME }} `
                         --slot staging
-          Write-Host '::set-env name=webAppName::$webAppName'
+          echo "::set-env name=webAppName::$webAppName"
         shell: pwsh
 
-      - name: Deploy ARM Template
+      - name: Swap slots for webapp
         uses: azure/CLI@v1
         with:
           inlineScript: |
