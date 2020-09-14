@@ -64,7 +64,7 @@ jobs:
           $armOutputObj = $output | ConvertFrom-Json
           Write-Host $output
           Write-Host $armOutputObj
-          $webAppName = $armOutputObj.webappname.value
+          $webAppName = $armOutputObj.properties.outputs.webappname.value
           Write-Host $webAppName
           az webapp config container set `
                         --resource-group mcwworkshoprg `
