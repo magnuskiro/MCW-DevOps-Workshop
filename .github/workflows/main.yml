@@ -75,8 +75,6 @@ jobs:
                         --docker-registry-server-url https://${{ env.containerregistry }} \
                         --docker-registry-server-user ${{ env.registryusername }} \
                         --slot staging
-          
-        
 
       - name: Swap slots for webapp
         uses: azure/CLI@v1
@@ -134,7 +132,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - run: |
-          $output = az deployment group create --resource-group ${{ env.resourcegroup }} --template-file azuredeploy.json --parameters environment=test --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
+          $output = az deployment group create --resource-group ${{ env.resourcegroup }} --template-file azuredeploy.json --parameters environment=production --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
           $armOutputObj = $output | ConvertFrom-Json
           $webAppName = $armOutputObj.properties.outputs.webappname.value
           az webapp config container set `
