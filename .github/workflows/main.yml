@@ -10,9 +10,10 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  resourcegroup: mcwworkshoprg
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
@@ -60,28 +61,29 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - run: |
-          $output = az deployment group create --resource-group mcwworkshoprg --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
+          $output = az deployment group create --resource-group ${{ env.resourcegroup }} --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
           $armOutputObj = $output | ConvertFrom-Json
           Write-Host $output
           Write-Host $armOutputObj
           $webAppName = $armOutputObj.properties.outputs.webappname.value
           Write-Host $webAppName
           az webapp config container set `
-                        --resource-group mcwworkshoprg `
+                        --resource-group ${{ env.resourcegroup }} `
                         --name $webappname `
                         --docker-custom-image-name mcwworkshop.azurecr.io/tailspintoys/web:${{ github.sha }} `
                         --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} `
                         --docker-registry-server-url https://mcwworkshop.azurecr.io `
                         --docker-registry-server-user ${{ secrets.REGISTRY_USERNAME }} `
                         --slot staging
-          az webapp deployment slot swap  -g mcwworkshoprg -n $webAppName --slot staging --target-slot production
+          echo '::set-env name=SELECTED_COLOR::$webAppName'
         shell: pwsh
 
       - name: Deploy ARM Template
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az webapp deployment slot swap  -g MyResourceGroup -n MyUniqueApp --slot staging --target-slot production
+            Write-Host "webappname ${{ env.webAppName }}"
+            az webapp deployment slot swap -g ${{ env.resourcegroup }} -n ${{ env.webAppName }} --slot staging --target-slot production
       # - name: Deploy ARM Template
       #   uses: azure/CLI@v1
       #   with:
