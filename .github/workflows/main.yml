@@ -55,20 +55,28 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - run: |
+      - name: Deploy ARM template
+        run: |
           $output = az deployment group create --resource-group ${{ env.resourcegroup }} --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
           $armOutputObj = $output | ConvertFrom-Json
           $webAppName = $armOutputObj.properties.outputs.webappname.value
-          az webapp config container set `
+          echo "::set-env name=webAppName::$webAppName"
+        shell: pwsh
+
+      - name: Deploy webapp to staging slot
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp config container set `
                         --resource-group ${{ env.resourcegroup }} `
-                        --name $webappname `
+                        --name ${{ env.webAppName }} `
                         --docker-custom-image-name ${{ env.imagename }}:${{ github.sha }} `
                         --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} `
                         --docker-registry-server-url https://${{ env.containerregistry }} `
                         --docker-registry-server-user ${{ env.registryusername }} `
                         --slot staging
-          echo "::set-env name=webAppName::$webAppName"
-        shell: pwsh
+          
+        
 
       - name: Swap slots for webapp
         uses: azure/CLI@v1
