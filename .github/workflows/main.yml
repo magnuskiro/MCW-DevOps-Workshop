@@ -75,14 +75,14 @@ jobs:
                         --docker-registry-server-url https://mcwworkshop.azurecr.io `
                         --docker-registry-server-user ${{ secrets.REGISTRY_USERNAME }} `
                         --slot staging
-          echo '::set-env name=SELECTED_COLOR::$webAppName'
+          Write-Host '::set-env name=webAppName::$webAppName'
         shell: pwsh
 
       - name: Deploy ARM Template
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            Write-Host "webappname ${{ env.webAppName }}"
+            echo "webappname ${{ env.webAppName }}"
             az webapp deployment slot swap -g ${{ env.resourcegroup }} -n ${{ env.webAppName }} --slot staging --target-slot production
       # - name: Deploy ARM Template
       #   uses: azure/CLI@v1
