@@ -77,3 +77,4 @@ jobs:
         with:
           inlineScript: |
             az webapp deployment slot swap -g ${{ env.resourcegroup }} -n ${{ env.webAppName }} --slot staging --target-slot production
+            
