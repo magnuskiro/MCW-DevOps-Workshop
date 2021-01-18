@@ -13,7 +13,7 @@ env:
   containerregistry: mcwworkshopkiro.azurecr.io
   registryusername: mcwworkshopkiro
   imagename: mcwworkshopkiro.azurecr.io/tailspintoys/web
-  
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
@@ -25,23 +25,15 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      
-      - name: Login to ACR
-        uses: docker/login-action@v1
+      - uses: azure/docker-login@v1
         with:
-          registry: ${{ env.containerregistry }}
+          login-server: ${{ env.containerregistry }}
           username: ${{ env.registryusername }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Build and push
-        id: docker_build
-        uses: docker/build-push-action@v2
-        with:
-          push: true
-          tags: ${{ env.imagename }}:${{ github.sha }}
-
+      - run: |
+          docker build . -t ${{ env.imagename }}:${{ github.sha }}
+          docker push ${{ env.imagename }}:${{ github.sha }}
       - name: Upload arm templates to workflow
         uses: actions/upload-artifact@v2
         with:
@@ -50,11 +42,89 @@ jobs:
 
   deploy-dev:
     runs-on: ubuntu-latest
-    environment:
-      name: Development
-      url: https://${{ steps.deploy_site.outputs.webAppName }}.azurewebsites.net
     needs: build
-    if: github.ref == 'refs/heads/dev'
+    steps:
+      - name: Download armtemplate
+        uses: actions/download-artifact@v2
+        with:
+          name: armtemplate
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Deploy resource group
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az group create -l westeurope -n ${{ env.resourcegroup }}
+      - name: Deploy ARM template
+        run: |
+          $output = az deployment group create --resource-group ${{ env.resourcegroup }} --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
+          $armOutputObj = $output | ConvertFrom-Json
+          $webAppName = $armOutputObj.properties.outputs.webappname.value
+          echo "webAppName=$webAppName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        shell: pwsh
+
+      - name: Deploy webapp to staging slot
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp config container set \
+                        --resource-group ${{ env.resourcegroup }} \
+                        --name ${{ env.webAppName }} \
+                        --docker-custom-image-name ${{ env.imagename }}:${{ github.sha }} \
+                        --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} \
+                        --docker-registry-server-url https://${{ env.containerregistry }} \
+                        --docker-registry-server-user ${{ env.registryusername }} \
+                        --slot staging
+      - name: Swap slots for webapp
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp deployment slot swap -g ${{ env.resourcegroup }} -n ${{ env.webAppName }} --slot staging --target-slot production
+  deploy-test:
+    runs-on: ubuntu-latest
+    needs: deploy-dev
+    steps:
+      - name: Download armtemplate
+        uses: actions/download-artifact@v2
+        with:
+          name: armtemplate
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+      - name: Deploy resource group
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az group create -l westeurope -n ${{ env.resourcegroup }}
+      - run: |
+          $output = az deployment group create --resource-group ${{ env.resourcegroup }} --template-file azuredeploy.json --parameters environment=test --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
+          $armOutputObj = $output | ConvertFrom-Json
+          $webAppName = $armOutputObj.properties.outputs.webappname.value
+          az webapp config container set `
+                        --resource-group ${{ env.resourcegroup }} `
+                        --name $webAppName `
+                        --docker-custom-image-name ${{ env.imagename }}:${{ github.sha }} `
+                        --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} `
+                        --docker-registry-server-url https://${{ env.containerregistry }} `
+                        --docker-registry-server-user ${{ env.registryusername }} `
+                        --slot staging
+          echo "webAppName=$webAppName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        shell: pwsh
+      - name: Swap slots for webapp
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp deployment slot swap -g ${{ env.resourcegroup }} -n ${{ env.webAppName }} --slot staging --target-slot production
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: deploy-test
     steps:
       - name: Download armtemplate
         uses: actions/download-artifact@v2
@@ -66,68 +136,27 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Run ARM deploy
-        uses: azure/arm-deploy@v1
-        id: deploy_site
+      - name: Deploy resource group
+        uses: azure/CLI@v1
         with:
-          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTIONID }}
-          resourceGroupName: ${{ env.resourcegroup }}
-          template: ./azuredeploy.json
-          parameters: 
-            environment=dev
-            administratorLogin=MySuperAdmin
-            administratorLoginPassword=${{ secrets.DBPASSWORD }}
-     
-      # - name: Deploy ARM template
-      #   id: deploy_site
-      #   run: |
-      #     $output = az deployment group create --resource-group ${{ env.resourcegroup }} --template-file azuredeploy.json --parameters environment=dev --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
-      #     $armOutputObj = $output | ConvertFrom-Json
-      #     $webAppName = $armOutputObj.properties.outputs.webappname.value
-      #     echo "::set-output name=webAppName::$webAppName"
-      #   shell: pwsh
-
-      - name: Set Web App ACR authentication
-        uses: Azure/appservice-settings@v1
-        with:
-          app-name: ${{ steps.deploy_site.outputs.webappname }}
-          app-settings-json: |
-            [
-                {
-                    "name": "DOCKER_REGISTRY_SERVER_URL",
-                    "value": "https://${{ env.containerregistry }}",
-                    "slotSetting": false
-                },
-                {
-                    "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
-                    "value": "${{ secrets.REGISTRY_PASSWORD }}",
-                    "slotSetting": false
-                },
-                {
-                    "name": "DOCKER_REGISTRY_SERVER_USERNAME",
-                    "value": "${{ secrets.REGISTRY_USERNAME  }}",
-                    "slotSetting": false
-                }
-            ]
-      - uses: azure/webapps-deploy@v2
-        with:
-          app-name: '${{ steps.deploy_site.outputs.webappname }}'
-          images: '${{ env.imagename }}:${{ github.sha }}'
-      # - name: Deploy webapp to staging slot
-      #   uses: azure/CLI@v1
-      #   with:
-      #     inlineScript: |
-      #       az webapp config container set \
-      #                   --resource-group ${{ env.resourcegroup }} \
-      #                   --name ${{ steps.deploy_site.outputs.webAppName }} \
-      #                   --docker-custom-image-name ${{ env.imagename }}:${{ github.sha }} \
-      #                   --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} \
-      #                   --docker-registry-server-url https://${{ env.containerregistry }} \
-      #                   --docker-registry-server-user ${{ env.registryusername }} \
-      #                   --slot staging
-
+          inlineScript: |
+            az group create -l westeurope -n ${{ env.resourcegroup }}
+      - run: |
+          $output = az deployment group create --resource-group ${{ env.resourcegroup }} --template-file azuredeploy.json --parameters environment=production --parameters administratorLogin=JallaJalla --parameters administratorLoginPassword=${{ secrets.DBPASSWORD }}
+          $armOutputObj = $output | ConvertFrom-Json
+          $webAppName = $armOutputObj.properties.outputs.webappname.value
+          az webapp config container set `
+                        --resource-group ${{ env.resourcegroup }} `
+                        --name $webAppName `
+                        --docker-custom-image-name ${{ env.imagename }}:${{ github.sha }} `
+                        --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} `
+                        --docker-registry-server-url https://${{ env.containerregistry }} `
+                        --docker-registry-server-user ${{ env.registryusername }} `
+                        --slot staging
+          echo "webAppName=$webAppName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        shell: pwsh
       - name: Swap slots for webapp
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az webapp deployment slot swap -g ${{ env.resourcegroup }} -n ${{ steps.deploy_site.outputs.webappname }} --slot staging --target-slot production
+            az webapp deployment slot swap -g ${{ env.resourcegroup }} -n ${{ env.webAppName }} --slot staging --target-slot production
