@@ -2,11 +2,10 @@ name: CI/CD of containers with GitHub Actions
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
-on:
+on: 
   push:
-    branches: [dev]
   pull_request:
-    branches: [dev]
+    branches: [dev, master]
 
 env:
   resourcegroup: mcwworkshoprg
@@ -51,6 +50,10 @@ jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     needs: build
+    environment:
+      name: Development
+      url: https://${{ steps.deploy_site.outputs.webAppName }}.azurewebsites.net
+    if: github.ref == 'refs/heads/dev'
     steps:
       - name: Download armtemplate
         uses: actions/download-artifact@v2
@@ -92,9 +95,14 @@ jobs:
         with:
           inlineScript: |
             az webapp deployment slot swap -g ${{ env.resourcegroup }} -n ${{ env.webAppName }} --slot staging --target-slot production
+  
   deploy-test:
     runs-on: ubuntu-latest
     needs: deploy-dev
+    environment:
+      name: Test
+      url: https://${{ steps.deploy_site.outputs.webAppName }}.azurewebsites.net
+    if: github.ref == 'refs/heads/dev'
     steps:
       - name: Download armtemplate
         uses: actions/download-artifact@v2
@@ -130,9 +138,14 @@ jobs:
         with:
           inlineScript: |
             az webapp deployment slot swap -g ${{ env.resourcegroup }} -n ${{ env.webAppName }} --slot staging --target-slot production
+  
   deploy-prod:
     runs-on: ubuntu-latest
     needs: deploy-test
+    environment:
+      name: Production
+      url: https://${{ steps.deploy_site.outputs.webAppName }}.azurewebsites.net
+    if: github.ref == 'refs/heads/master'
     steps:
       - name: Download armtemplate
         uses: actions/download-artifact@v2
