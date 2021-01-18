@@ -71,7 +71,7 @@ jobs:
         uses: azure/arm-deploy@v1
         id: deploy_site
         with:
-          #subscriptionId: ${{ secrets.AZURE_SUBSCRIPTIONID }}
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTIONID }}
           resourceGroupName: ${{ env.resourcegroup }}
           template: ./azuredeploy.json
           parameters: 
@@ -169,7 +169,7 @@ jobs:
         uses: azure/arm-deploy@v1
         id: deploy_site
         with:
-          #subscriptionId: ${{ secrets.AZURE_SUBSCRIPTIONID }}
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTIONID }}
           resourceGroupName: ${{ env.resourcegroup }}
           template: ./azuredeploy.json
           parameters: 
