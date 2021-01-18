@@ -4,15 +4,15 @@ name: CI/CD of containers with GitHub Actions
 # events but only for the master branch
 on:
   push:
-    branches: [master]
+    branches: [dev]
   pull_request:
-    branches: [master]
+    branches: [dev]
 
 env:
   resourcegroup: mcwworkshoprg
-  containerregistry: mcwworkshop.azurecr.io
-  registryusername: mcwworkshop
-  imagename: mcwworkshop.azurecr.io/tailspintoys/web
+  containerregistry: mcwworkshopkiro.azurecr.io
+  registryusername: mcwworkshopkiro
+  imagename: mcwworkshopkiro.azurecr.io/tailspintoys/web
   
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -54,7 +54,7 @@ jobs:
       name: Development
       url: https://${{ steps.deploy_site.outputs.webAppName }}.azurewebsites.net
     needs: build
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/dev'
     steps:
       - name: Download armtemplate
         uses: actions/download-artifact@v2
