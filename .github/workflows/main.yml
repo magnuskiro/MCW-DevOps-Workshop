@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: Development
-      url: https://${{ steps.deploy_site.outputs.webAppName }}.azurewebsites.net
+      url: https://${{ steps.deploy_site.outputs.webappname }}.azurewebsites.net
     needs: build
     if: github.ref == 'refs/heads/master'
     steps:
@@ -85,7 +85,7 @@ jobs:
           inlineScript: |
             az webapp config container set \
                         --resource-group ${{ env.resourcegroup }} \
-                        --name ${{ steps.deploy_site.outputs.webAppName }} \
+                        --name ${{ steps.deploy_site.outputs.webappname }} \
                         --docker-custom-image-name ${{ env.imagename }}:${{ github.sha }} \
                         --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} \
                         --docker-registry-server-url https://${{ env.containerregistry }} \
@@ -102,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: Test
-      url: https://${{ steps.deploy_site.outputs.webAppName }}.azurewebsites.net
+      url: https://${{ steps.deploy_site.outputs.webappname }}.azurewebsites.net
     needs: deploy-dev
     if: github.ref == 'refs/heads/master'
     steps:
@@ -124,7 +124,7 @@ jobs:
           resourceGroupName: ${{ env.resourcegroup }}
           template: ./azuredeploy.json
           parameters: 
-            environment=dev
+            environment=test
             administratorLogin=MySuperAdmin
             administratorLoginPassword=${{ secrets.DBPASSWORD }}
 
@@ -134,7 +134,7 @@ jobs:
           inlineScript: |
             az webapp config container set \
                         --resource-group ${{ env.resourcegroup }} \
-                        --name ${{ steps.deploy_site.outputs.webAppName }} \
+                        --name ${{ steps.deploy_site.outputs.webappname }} \
                         --docker-custom-image-name ${{ env.imagename }}:${{ github.sha }} \
                         --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} \
                         --docker-registry-server-url https://${{ env.containerregistry }} \
@@ -151,7 +151,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: Production
-      url: https://${{ steps.deploy_site.outputs.webAppName }}.azurewebsites.net
+      url: https://${{ steps.deploy_site.outputs.webappname }}.azurewebsites.net
     needs: deploy-test
     if: github.ref == 'refs/heads/master'
     steps:
@@ -173,7 +173,7 @@ jobs:
           resourceGroupName: ${{ env.resourcegroup }}
           template: ./azuredeploy.json
           parameters: 
-            environment=dev
+            environment=production
             administratorLogin=MySuperAdmin
             administratorLoginPassword=${{ secrets.DBPASSWORD }}
 
@@ -183,7 +183,7 @@ jobs:
           inlineScript: |
             az webapp config container set \
                         --resource-group ${{ env.resourcegroup }} \
-                        --name ${{ steps.deploy_site.outputs.webAppName }} \
+                        --name ${{ steps.deploy_site.outputs.webappname }} \
                         --docker-custom-image-name ${{ env.imagename }}:${{ github.sha }} \
                         --docker-registry-server-password ${{ secrets.REGISTRY_PASSWORD }} \
                         --docker-registry-server-url https://${{ env.containerregistry }} \
