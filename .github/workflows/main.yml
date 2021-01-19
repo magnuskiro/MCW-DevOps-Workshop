@@ -124,7 +124,7 @@ jobs:
           resourceGroupName: ${{ env.resourcegroup }}
           template: ./azuredeploy.json
           parameters: 
-            environment=dev
+            environment=test
             administratorLogin=MySuperAdmin
             administratorLoginPassword=${{ secrets.DBPASSWORD }}
 
@@ -173,7 +173,7 @@ jobs:
           resourceGroupName: ${{ env.resourcegroup }}
           template: ./azuredeploy.json
           parameters: 
-            environment=dev
+            environment=production
             administratorLogin=MySuperAdmin
             administratorLoginPassword=${{ secrets.DBPASSWORD }}
 
